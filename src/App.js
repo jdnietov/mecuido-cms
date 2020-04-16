@@ -1,26 +1,41 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, { useEffect, useState } from 'react'
+import { FirebaseContext } from 'services/firebase';
 
-function App() {
+import SectionEditor from "components/SectionEditor/SectionEditor";
+
+import './App.sass'
+
+function App(props) {
+  const { firebase } = props
+  const [done, setDone] = useState(false)
+  const [sections, setSections] = useState([])
+
+  const db = firebase.database() 
+
+  useEffect(() => {    
+    db.ref().on("value", snapshot => {
+      snapshot.forEach(snap => {
+        const val = snap.val()
+        setSections(prev => [...prev, { id: snap.key, val }])
+      });
+    });
+  }, [db])
+  
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div className="App container">
+      <h1 className="title">MeCuido CMS</h1>
+
+      {sections.map(s => <SectionEditor section={s} />)}
     </div>
   );
 }
 
-export default App;
+const withContext = (Component) => {
+  return (props) => (
+      <FirebaseContext.Consumer>    
+          {(context) => <Component {...props} firebase={context} />}
+      </FirebaseContext.Consumer>
+  )
+}
+
+export default withContext(App)
